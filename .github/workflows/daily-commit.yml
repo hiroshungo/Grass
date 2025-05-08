@@ -1,0 +1,34 @@
+name: Daily Commit
+
+on:
+  schedule:
+    - cron: '0 23 * * *'  # 毎日23時に実行 (UTC) -> 日本時間8時 (JST)
+  workflow_dispatch:  # 手動トリガーでの実行も可能
+
+jobs:
+  daily-commit:
+    runs-on: ubuntu-22.04
+
+    env:
+      PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      COMMIT_USER_NAME: ${{ vars.COMMIT_USER_NAME }}
+      COMMIT_USER_EMAIL: ${{ vars.COMMIT_USER_EMAIL }}
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        repository: ${{ github.repository }}
+
+    - name: Make a commit
+      run: |
+        echo -e "Auto commit on $(TZ='Asia/Tokyo' date)" >> README.md
+        git config user.name "${{ env.COMMIT_USER_NAME }}"
+        git config user.email "${{ env.COMMIT_USER_EMAIL }}"
+        git add README.md
+        git commit -m "Auto commit on $(date)" || echo "No changes to commit"
+
+    - name: Push changes
+      run: |
+        git push origin main
